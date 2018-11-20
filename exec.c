@@ -7,6 +7,8 @@
 #include "x86.h"
 #include "elf.h"
 
+#include "globals.h"
+
 int
 exec(char *path, char **argv)
 {
@@ -60,13 +62,15 @@ exec(char *path, char **argv)
   end_op();
   ip = 0;
 
-  // Allocate two pages at the next page boundary.
-  // Make the first inaccessible.  Use the second as the user stack.
-  sz = PGROUNDUP(sz);
-  if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
+  // Make a new page right below the kernel memory for the stack
+  // The stack will grow downwards
+  sz = KERNBASE - PGSIZE; 
+  if((sz = allocuvm(pgdir, sz, sz + 1)) == 0) {
+    printf(2, "You went to bad (exec.c creating stack page)");
     goto bad;
+  }
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
-  sp = sz;
+  sp = KERNBASE - WORDSIZE;
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
