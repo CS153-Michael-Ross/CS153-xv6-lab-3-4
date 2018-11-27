@@ -69,7 +69,7 @@ exec(char *path, char **argv)
   // The stack will grow downwards
   stackSZ = KERNBASE - PGSIZE;
   if((stackSZ = allocuvm(pgdir, stackSZ, stackSZ + 1)) == 0) {
-    printf(2, "You went to bad (exec.c creating stack page)");
+    cprintf("You went to bad (exec.c creating stack page)");
     goto bad;
   }
   sp = KERNBASE - WORDSIZE;
