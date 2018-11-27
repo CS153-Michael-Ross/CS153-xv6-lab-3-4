@@ -15,6 +15,7 @@ exec(char *path, char **argv)
   char *s, *last;
   int i, off;
   uint argc, sz, sp, ustack[3+MAXARG+1];
+  uint stackSZ;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -62,15 +63,18 @@ exec(char *path, char **argv)
   end_op();
   ip = 0;
 
+  sz = PGROUNDUP(sz);
+
   // Make a new page right below the kernel memory for the stack
   // The stack will grow downwards
-  sz = KERNBASE - PGSIZE; 
-  if((sz = allocuvm(pgdir, sz, sz + 1)) == 0) {
+  stackSZ = KERNBASE - PGSIZE;
+  if((stackSZ = allocuvm(pgdir, stackSZ, stackSZ + 1)) == 0) {
     printf(2, "You went to bad (exec.c creating stack page)");
     goto bad;
   }
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = KERNBASE - WORDSIZE;
+  // Make the page inaccessible
+  //clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
@@ -101,6 +105,7 @@ exec(char *path, char **argv)
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
+  curproc->stackSZ = stackSZ;
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   switchuvm(curproc);
