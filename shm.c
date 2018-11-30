@@ -30,10 +30,11 @@ void shminit() {
 
 // Get a shared memory page by its id
 // Returns a pointer to the shm_page or 0 if it could not be found
-shm_page * shm_get_page(int id) {
-  for (int i = 0; i < 64; i++) {
+struct shm_page * shm_get_page(int id) {
+  uint i;
+  for (i = 0; i < 64; i++) {
     if (shm_table.shm_pages[i].id == id) {
-      return shm_table_pages + i;
+      return shm_table.shm_pages + i;
     }
   }
   
@@ -56,7 +57,7 @@ int shm_close(int id) {
 //you write this tooD
   
   acquire(&(shm_table.lock));
-  shm_page* pg = shm_get_page(id); 
+  struct shm_page* pg = shm_get_page(id); 
   	
   if(pg == 0 || pg->refcnt == 0){
     cprintf("Error: No shared memory to close.\n\n");
