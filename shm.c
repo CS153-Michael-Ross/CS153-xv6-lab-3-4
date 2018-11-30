@@ -28,6 +28,18 @@ void shminit() {
   release(&(shm_table.lock));
 }
 
+// Get a shared memory page by its id
+// Returns a pointer to the shm_page or 0 if it could not be found
+shm_page * shm_get_page(int id) {
+  for (int i = 0; i < 64; i++) {
+    if (shm_table.shm_pages[i].id == id) {
+      return shm_table_pages + i;
+    }
+  }
+
+  return 0;
+}
+
 int shm_open(int id, char **pointer) {
 
 //you write this
@@ -40,7 +52,7 @@ return 0; //added to remove compiler warning -- you should decide what to return
 
 
 int shm_close(int id) {
-//you write this too!
+//you write this tooD
   
   acquire(&(shm_table.lock));
   shm_page* pg = shm_get_page(id); 
@@ -58,5 +70,10 @@ int shm_close(int id) {
     pg->frame = 0; 
   }
   release(&(shm_table.lock));
+
+
+
+
 return 0; //added to remove compiler warning -- you should decide what to return
 }
+
