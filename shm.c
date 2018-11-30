@@ -53,7 +53,26 @@ return 0; //added to remove compiler warning -- you should decide what to return
 
 
 int shm_close(int id) {
-//you write this too!
+//you write this tooD
+  
+  acquire(&(shm_table.lock));
+  shm_page* pg = shm_get_page(id); 
+  	
+  if(pg == 0 || pg->refcnt == 0){
+    cprintf("Error: No shared memory to close.\n\n");
+    return 1; //Return error
+  }
+  else{
+    pg->refcnt--;
+  }
+  
+  if(pg->refcnt == 0){
+    pg->id = 0;
+    pg->frame = 0; 
+  }
+  release(&(shm_table.lock));
+
+
 
 
 return 0; //added to remove compiler warning -- you should decide what to return
