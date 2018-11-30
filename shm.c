@@ -36,7 +36,8 @@ shm_page * shm_get_page(int id) {
       return shm_table_pages + i;
     }
   }
-
+  
+  cprintf("Error: no page with id: %u", id);
   return 0;
 }
 
