@@ -67,12 +67,12 @@ exec(char *path, char **argv)
 
   // Make a new page right below the kernel memory for the stack
   // The stack will grow downwards
-  stackSZ = KERNBASE - PGSIZE;
-  if((stackSZ = allocuvm(pgdir, stackSZ, stackSZ + 1)) == 0) {
+  if((allocuvm(pgdir, KERNBASE - PGSIZE - 1, KERNBASE - 1)) == 0) {
     cprintf("You went to bad (exec.c creating stack page)");
     goto bad;
   }
   sp = KERNBASE - WORDSIZE;
+  stackSZ = 1;
   // Make the page inaccessible
   //clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
 
