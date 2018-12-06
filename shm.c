@@ -34,12 +34,10 @@ struct shm_page * shm_get_page(int id) {
   uint i;
   for (i = 0; i < 64; i++) {
     if (shm_table.shm_pages[i].id == id) {
-      cprintf("Debug: found page with id: %d\n", id);
       return shm_table.shm_pages + i;
     }
   }
   
-  cprintf("Debug: no page with id: %d\n", id);
   return 0;
 }
 
@@ -56,7 +54,6 @@ int shm_open(int id, char **pointer) {
 
   if (pg) { //The page exists in shm_table
     //map page
-    cprintf("Page with id %d exists", id);
     if (!mappages(curproc->pgdir, va, PGSIZE, V2P(pg->frame), PTE_W|PTE_U)) 
     {
       curproc->sz = (uint)va + PGSIZE;
@@ -64,7 +61,13 @@ int shm_open(int id, char **pointer) {
       pg->refcnt++;
 
       *pointer = va;
+    } else {
+      cprintf("Error: Shared page with id %d could not be mapped.\n", id);
+      release(&(shm_table.lock));
+      return 1;
     }
+
+
   } else{ //page was not found in shm_table
     //create page
     for (i = 0; i < 64; i++) {
@@ -75,12 +78,13 @@ int shm_open(int id, char **pointer) {
     }
 
     if (!pg) {
-      cprintf("Error: Shared memory table is full.");
+      cprintf("Error: Shared memory table is full.\n");
       release(&(shm_table.lock));
       return 1;
     }
 
     pg->frame = kalloc();
+    memset(pg->frame, 0, PGSIZE);
 
     if (!mappages(curproc->pgdir, va, PGSIZE, V2P(pg->frame), PTE_W|PTE_U)) 
     {
@@ -89,6 +93,10 @@ int shm_open(int id, char **pointer) {
       
       pg->id = id;
       pg->refcnt++; 
+    } else {
+      cprintf("Error: shared page with id %d could not be mapped.\n", id);
+      release(&(shm_table.lock));
+      return 1;
     }
     
   }
