@@ -34,34 +34,69 @@ struct shm_page * shm_get_page(int id) {
   uint i;
   for (i = 0; i < 64; i++) {
     if (shm_table.shm_pages[i].id == id) {
+      cprintf("Debug: found page with id: %d\n", id);
       return shm_table.shm_pages + i;
     }
   }
   
-  cprintf("Error: no page with id: %u", id);
+  cprintf("Debug: no page with id: %d\n", id);
   return 0;
 }
 
 int shm_open(int id, char **pointer) {
 
-  struct shm_page * pg;
+  struct shm_page * pg = 0;
+  struct proc * curproc = myproc();
+  uint i;
+  char * va = (char *)PGROUNDUP(curproc->sz);
 
   acquire(&(shm_table.lock));
 
   pg = shm_get_page(id);
 
-  if (pg) {
+  if (pg) { //The page exists in shm_table
     //map page
-  } else {
+    cprintf("Page with id %d exists", id);
+    if (!mappages(curproc->pgdir, va, PGSIZE, V2P(pg->frame), PTE_W|PTE_U)) 
+    {
+      curproc->sz = (uint)va + PGSIZE;
+
+      pg->refcnt++;
+
+      *pointer = va;
+    }
+  } else{ //page was not found in shm_table
     //create page
+    for (i = 0; i < 64; i++) {
+      if (!shm_table.shm_pages[i].frame) { //Find an open frame in shm_table
+        pg = shm_table.shm_pages + i;
+        break;
+      }
+    }
+
+    if (!pg) {
+      cprintf("Error: Shared memory table is full.");
+      release(&(shm_table.lock));
+      return 1;
+    }
+
+    pg->frame = kalloc();
+
+    if (!mappages(curproc->pgdir, va, PGSIZE, V2P(pg->frame), PTE_W|PTE_U)) 
+    {
+      curproc->sz = (uint)va + PGSIZE;
+      *pointer = va;
+      
+      pg->id = id;
+      pg->refcnt++; 
+    }
+    
   }
   
   release(&(shm_table.lock));
 
-
-
-return 0; //added to remove compiler warning -- you should decide what to return
-}
+  return 0; 
+}//All should be well
 
 
 // Close a shared memory page for the current process.
