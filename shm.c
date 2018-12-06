@@ -44,8 +44,19 @@ struct shm_page * shm_get_page(int id) {
 
 int shm_open(int id, char **pointer) {
 
-//you write this
+  struct shm_page * pg;
 
+  acquire(&(shm_table.lock));
+
+  pg = shm_get_page(id);
+
+  if (pg) {
+    //map page
+  } else {
+    //create page
+  }
+  
+  release(&(shm_table.lock));
 
 
 
@@ -53,14 +64,16 @@ return 0; //added to remove compiler warning -- you should decide what to return
 }
 
 
+// Close a shared memory page for the current process.
+// Return 1 if there was an error closing, 0 otherwise.
 int shm_close(int id) {
-//you write this tooD
   
   acquire(&(shm_table.lock));
   struct shm_page* pg = shm_get_page(id); 
   	
   if(pg == 0 || pg->refcnt == 0){
     cprintf("Error: No shared memory to close.\n\n");
+    release(&(shm_table.lock));
     return 1; //Return error
   }
   else{
@@ -73,9 +86,6 @@ int shm_close(int id) {
   }
   release(&(shm_table.lock));
 
-
-
-
-return 0; //added to remove compiler warning -- you should decide what to return
+  return 0; 
 }
 
